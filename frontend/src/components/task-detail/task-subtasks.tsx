@@ -46,12 +46,15 @@ export function TaskSubtasks({
 
   async function submit() {
     const trimmed = draft.trim();
+    // Clear the draft before the await: Enter and blur both call submit(),
+    // and a blur firing while the first call is still in flight would
+    // otherwise re-read the same non-empty draft and add a duplicate.
+    setDraft("");
+    setAdding(false);
     if (trimmed) {
       await addSubtask(trimmed);
       onActivity();
     }
-    setDraft("");
-    setAdding(false);
   }
 
   return (

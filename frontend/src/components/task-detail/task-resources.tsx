@@ -59,6 +59,7 @@ function ResourceChip({
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(resource.label);
   const [url, setUrl] = useState(resource.url);
+  const submittingRef = useRef(false);
   const { inputRef, uploading, handleFileChange } = useResourceUpload(
     taskId,
     (filename, uploadedUrl) => {
@@ -68,15 +69,26 @@ function ResourceChip({
   );
 
   async function submit() {
+    // Enter and blur both call submit(); guard against blur re-firing
+    // (and re-sending the same PATCH) while an update is still in flight.
+    if (submittingRef.current) return;
     const trimmedLabel = label.trim();
     const trimmedUrl = url.trim();
-    if (!trimmedLabel || !trimmedUrl) return;
+    if (!trimmedLabel || !trimmedUrl) {
+      setEditing(false);
+      return;
+    }
     if (trimmedLabel !== resource.label || trimmedUrl !== resource.url) {
-      await updateResource(taskId, resource.id, {
-        label: trimmedLabel,
-        url: trimmedUrl,
-      });
-      onChange();
+      submittingRef.current = true;
+      try {
+        await updateResource(taskId, resource.id, {
+          label: trimmedLabel,
+          url: trimmedUrl,
+        });
+        onChange();
+      } finally {
+        submittingRef.current = false;
+      }
     }
     setEditing(false);
   }
