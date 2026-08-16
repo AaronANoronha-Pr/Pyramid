@@ -68,7 +68,7 @@ export function KanbanColumn({
         if (taskId) onMoveTask(taskId, id);
       }}
       className={cn(
-        "flex w-[289px] shrink-0 flex-col gap-3 rounded-xl bg-muted p-3 transition-colors",
+        "flex min-w-[289px] flex-1 flex-col gap-3 rounded-xl bg-muted p-3 transition-colors",
         isDragOver && "bg-accent ring-2 ring-ring",
       )}
     >

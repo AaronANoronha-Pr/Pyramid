@@ -178,7 +178,7 @@ export default function TasksPage() {
       {loading ? (
         <p className="px-6 text-sm text-muted-foreground">Loading tasks…</p>
       ) : view === "board" ? (
-        <div className="flex flex-1 items-start justify-center gap-6 overflow-x-auto px-6 pb-6">
+        <div className="flex flex-1 items-start gap-6 overflow-x-auto px-6 pb-6">
           {COLUMN_DEFS.map((col) => (
             <KanbanColumn
               key={col.id}
