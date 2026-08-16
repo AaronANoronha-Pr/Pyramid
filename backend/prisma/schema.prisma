@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String?       @unique
+  name         String
+  title        String?
+  username     String?       @unique
+  avatarUrl    String?
+  provider     String // "google" | "guest"
+  googleId     String?       @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  tasks        Task[]
+  comments     Comment[]
+  activityLogs ActivityLog[]
+  projects     Project[]
+}
+
+model Task {
+  id           String        @id @default(cuid())
+  title        String
+  description  String        @default("")
+  assigneeName String
+  dueDate      String
+  startDate    String        @default("")
+  tags         String // comma-separated
+  teams        String        @default("") // comma-separated
+  column       String // "todo" | "doing" | "completed" | "onhold" — board column
+  status       String        @default("todo") // detail-panel status field, independent of board column
+  priority     String        @default("medium") // "low" | "medium" | "high"
+  reporter     String        @default("")
+  locked       Boolean       @default(false)
+  order        Int           @default(0)
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  subtasks     Subtask[]
+  comments     Comment[]
+  members      TaskMember[]
+  resources    Resource[]
+  customFields CustomField[]
+  activityLogs ActivityLog[]
+
+  @@index([ownerId, column])
+  @@index([projectId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  priority    String   @default("medium")
+  leadName    String   @default("")
+  dueDate     String   @default("")
+  order       Int      @default(0)
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+}
+
+model Subtask {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @default("")
+  priority     String   @default("medium") // "low" | "medium" | "high"
+  assigneeName String   @default("")
+  dueDate      String   @default("")
+  order        Int      @default(0)
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  ownerId      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model Comment {
+  id          String              @id @default(cuid())
+  body        String
+  taskId      String
+  task        Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  ownerId     String
+  parentId    String?
+  parent      Comment?            @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[]           @relation("CommentReplies")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  attachments CommentAttachment[]
+
+  @@index([taskId])
+}
+
+model CommentAttachment {
+  id        String   @id @default(cuid())
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  @@index([commentId])
+}
+
+model TaskMember {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  memberName  String
+  memberInits String
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  @@unique([taskId, memberName])
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label     String
+  url       String
+  ownerId   String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model CustomField {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+  order     Int      @default(0)
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  projectId String?
+  taskTitle String   @default("") // snapshot of the task's title — survives task deletion for the project activity feed
+  ownerId   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind      String // "change" | "update" | "task"
+  field     String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([projectId])
+}
