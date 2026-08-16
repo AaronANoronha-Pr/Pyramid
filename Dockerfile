@@ -12,6 +12,9 @@ RUN npm run build
 
 # --- backend build ---
 FROM node:20-slim AS backend-builder
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 build-essential \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci
