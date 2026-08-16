@@ -3,7 +3,9 @@ set -e
 
 cd /app/backend
 npx prisma migrate deploy
-node dist/main.js &
+# PORT is the outer container port nginx binds to (Render sets it) — the
+# backend always listens internally on 3001 regardless of that value.
+PORT=3001 node dist/src/main.js &
 BACKEND_PID=$!
 
 cd /app/frontend
